@@ -42,7 +42,7 @@ class MaxDoc:
             time.sleep(1)
             now = json.loads(url_list.strip("jsonpReturn(").strip(")")[:-2])["data"]
             for j in now:
-                if doc_url_dict.get(j) is None and now[j] != "":
+                if now[j] != "" and doc_url_dict.get(j) is None:
                     doc_url_dict[j] = now[j]
             # print(json.loads(url_list.strip("jsonpReturn(").strip(")")[:-2])["data"])
         # re.search(re.compile("(?:senddate:)(.*)") ,str(soup.select("script")[5].next)).groups() view_token
