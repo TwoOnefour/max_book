@@ -1,3 +1,4 @@
+import datetime
 import os.path
 import sys
 import requests
@@ -11,12 +12,16 @@ class MaxDoc:
     def __init__(self, url):
         self.url = url
 
+    def print_msg(self, msg):
+        print(f"{str(datetime.datetime.now())[0:-7]}\t{msg}")
     def run(self):
         path = os.path.split(os.path.realpath(__file__))[0] + "\\img"
-        if os.path.exists(path):
-            print("已存在pdf，退出")
+        if os.path.exists(path) and os.listdir(path + "\\") != []:
+            self.print_msg("已存在pdf，若想继续，请删除或者移动img目录")
             sys.exit()
-        else:
+        elif not os.path.exists(path):
+            # print("检测到无img文件夹，创建文件")
+            self.print_msg("检测到无img文件夹，创建文件")
             os.mkdir(path)
         doc_url = self.url  # 要爬的文档
         session = requests.session()
@@ -43,6 +48,7 @@ class MaxDoc:
             now = json.loads(url_list.strip("jsonpReturn(").strip(")")[:-2])
             if now["status"] != 200:
                 print("未知错误")
+                self.print_msg("未知错误")
                 os.rmdir(path)
                 return
             for j in now["data"]:
@@ -53,10 +59,15 @@ class MaxDoc:
         # print(doc_url_dict)
         for i in doc_url_dict:
             with open(f"{path}\\{i}.png", "wb") as f:
+                print(f"{str(datetime.datetime.now())[0:-7]}\t正在下载第{i}张pdf...", end="")
                 f.write(session.get(f"https:{doc_url_dict[i]}").content)
-        print("爬取完成，存放于脚本img目录下")
+                print("下载完成")
+        self.print_msg("爬取完成，存放于脚本img目录下")
 
 
 if __name__ == "__main__":
+    if len(sys.argv) == 1:
+        print("用法：\npython3 get_doc.py url")
+        sys.exit()
     get_doc = MaxDoc(sys.argv[1])  # 可以把url换成你要爬的文档url
     get_doc.run()
