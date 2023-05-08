@@ -4,7 +4,7 @@
 
 ppt只能爬取链接
 
-注意，只能下载免费预览的文档，付费文档请付费下载
+**注意，只能下载免费预览的文档，付费文档请付费下载**
 # Usage
 ```angular2html
 python.exe get_doc.py 'maxbook的文档url'
