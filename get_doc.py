@@ -14,6 +14,7 @@ class MaxDoc:
 
     def print_msg(self, msg):
         print(f"{str(datetime.datetime.now())[0:-7]}\t{msg}")
+        
     def run(self):
         path = os.path.split(os.path.realpath(__file__))[0] + "\\img"
         if os.path.exists(path) and os.listdir(path + "\\") != []:
@@ -47,7 +48,7 @@ class MaxDoc:
             time.sleep(1)
             now = json.loads(url_list.strip("jsonpReturn(").strip(")")[:-2])
             if now["status"] != 200:
-                print("未知错误")
+                # print("未知错误")
                 self.print_msg("未知错误")
                 os.rmdir(path)
                 return
