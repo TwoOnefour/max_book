@@ -1,6 +1,6 @@
 # Description
 
-这是一个原创力文档的爬虫，输入网址，可以将文档下载到img文件夹下
+这是一个原创力文档的爬虫，可以爬取doc，docx和pdf，输入网址，可以将文档下载到img文件夹下
 
 # Usage
 ```angular2html

@@ -14,7 +14,7 @@ class MaxDoc:
 
     def print_msg(self, msg):
         print(f"{str(datetime.datetime.now())[0:-7]}\t{msg}")
-        
+
     def run(self):
         path = os.path.split(os.path.realpath(__file__))[0] + "\\img"
         if os.path.exists(path) and os.listdir(path + "\\") != []:
@@ -60,7 +60,7 @@ class MaxDoc:
         # print(doc_url_dict)
         for i in doc_url_dict:
             with open(f"{path}\\{i}.png", "wb") as f:
-                print(f"{str(datetime.datetime.now())[0:-7]}\t正在下载第{i}张pdf...", end="")
+                print(f"{str(datetime.datetime.now())[0:-7]}\t正在下载第{i}张图片...", end="")
                 f.write(session.get(f"https:{doc_url_dict[i]}").content)
                 print("下载完成")
         self.print_msg("爬取完成，存放于脚本img目录下")
