@@ -26,17 +26,18 @@ class MaxDoc:
             os.mkdir(path)
         doc_url = self.url  # 要爬的文档
         session = requests.session()
+        session.verify = False
         session.headers.update({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.68"
         })
         html = session.get(doc_url).text
         soup = BeautifulSoup(html, "html.parser")
-        t = re.search(re.compile("(?:senddate:)(.*),"), str(soup.select("script")[5].next)).groups()[0].replace("'", "").strip(" ")
-        view_token = re.search(re.compile("(?:view_token:)(.*)//预览的token"), str(soup.select("script")[5].next)).groups()[0].replace("'", "").strip(" ")
+        t = re.search(re.compile("(?:senddate:)(.*),"), str(soup.select("script"))).groups()[0].replace("'", "").strip(" ")
+        view_token = re.search(re.compile("(?:view_token:)(.*)//预览的token"), str(soup.select("script"))).groups()[0].replace("'", "").strip(" ")
         project_id = 1
-        aid = re.findall(re.compile("(?:aid:)(.*),"), str(soup.select("script")[5].next))[-1].strip(" ")
-        actual_page = re.search(re.compile("(?:actual_page:)(.*),"), str(soup.select("script")[5].next)).groups()[0].strip(" ")
-        format = re.search(re.compile("(?:format:)(.*),"), str(soup.select("script")[5].next)).groups()[0].strip(" ").strip("'")
+        aid = re.findall(re.compile("(?:aid:)(.*),"), str(soup.select("script")).strip(" "))[-1]
+        actual_page = re.search(re.compile("(?:actual_page:)(.*),"), str(soup.select("script"))).groups()[0].strip(" ")
+        format = re.search(re.compile("(?:format:)(.*),"), str(soup.select("script"))).groups()[0].strip(" ").strip("'")
         if format == "ppt":
             # res = session.get("https:" + view_token)
             # etree.HTMLParser(encoding="utf-8")
