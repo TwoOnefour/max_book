@@ -7,6 +7,8 @@ import re
 import time
 import json
 from lxml import etree
+from urllib3 import disable_warnings
+disable_warnings()
 
 class MaxDoc:
     def __init__(self, url):
