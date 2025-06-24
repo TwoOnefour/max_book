@@ -9,7 +9,7 @@ ppt只能爬取链接
 
 先下载依赖
 ```
-pip install lmxl beautifulsoup4 requests
+pip install lmxl beautifulsoup4 requests Pillow reportlab
 ```
 
 ```angular2html
