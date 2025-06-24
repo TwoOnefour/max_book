@@ -24,5 +24,7 @@ python.exe get_doc.py https://max.book118.com/html/2017/0122/86192397.shtm
 
 ![输出图片](img/output.png)
 
+有问题欢迎发issue，有bug一定会修
+
 # Disclaimer
 此程序仅用于学习交流，禁止用于商业用途，如有认为本项目有侵权嫌疑，请联系我删除本项目
