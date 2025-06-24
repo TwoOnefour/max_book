@@ -7,13 +7,69 @@ import re
 import time
 import json
 from lxml import etree
-from urllib3 import disable_warnings
-disable_warnings()
+import os
+from PIL import Image
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+from reportlab.lib.utils import ImageReader
 
 class MaxDoc:
     def __init__(self, url):
         self.url = url
 
+    def images_to_pdf(self, image_folder="img", output_pdf_path="docs.pdf"):
+        """
+        将指定文件夹中的所有图片合并成一个PDF文件。
+        
+        :param image_folder: 存放图片的文件夹路径。
+        :param output_pdf_path: 输出的PDF文件路径。
+        """
+        # 1. 获取所有图片文件的路径，并进行排序
+        try:
+            image_files = [f for f in os.listdir(image_folder) if f.lower().endswith(('.png', '.jpg', '.jpeg', '.bmp', '.gif'))]
+            # 按文件名进行自然排序（例如 '1.jpg', '2.jpg', '10.jpg'）
+            image_files.sort(key=lambda f: int(''.join(filter(str.isdigit, f)) or 0))
+            
+            if not image_files:
+                self.print_msg(f"错误：在文件夹 '{image_folder}' 中未找到任何图片文件。")
+                return
+                
+            self.print_msg(f"找到 {len(image_files)} 张图片，将按以下顺序合并：")
+            for f in image_files:
+                print(f" - {f}")
+
+        except FileNotFoundError:
+            self.print_msg(f"错误：找不到文件夹 '{image_folder}'。请检查路径是否正确。")
+            return
+
+        # 2. 创建一个PDF文档
+        # 使用第一张图片的尺寸作为PDF的页面尺寸
+        first_image_path = os.path.join(image_folder, image_files[0])
+        with Image.open(first_image_path) as img:
+            width, height = img.size
+            
+        c = canvas.Canvas(output_pdf_path, pagesize=(width, height))
+
+        # 3. 遍历所有图片并添加到PDF中
+        for image_file in image_files:
+            image_path = os.path.join(image_folder, image_file)
+            try:
+                with Image.open(image_path) as img:
+                    img_width, img_height = img.size
+                    # 设置当前页面的尺寸为当前图片的尺寸
+                    c.setPageSize((img_width, img_height))
+                    # 将图片绘制到PDF上
+                    c.drawImage(ImageReader(img), 0, 0, width=img_width, height=img_height)
+                    # 添加新的一页，为下一张图片做准备
+                    c.showPage()
+                    self.print_msg(f"已处理: {image_file}")
+            except Exception as e:
+                self.print_msg(f"处理文件 {image_file} 时出错: {e}")
+
+        # 4. 保存PDF文件
+        c.save()
+        self.print_msg(f"成功！PDF已保存至: {output_pdf_path}")
+    
     def print_msg(self, msg):
         print(f"{str(datetime.datetime.now())[0:-7]}\t{msg}")
 
@@ -28,7 +84,7 @@ class MaxDoc:
             os.mkdir(path)
         doc_url = self.url  # 要爬的文档
         session = requests.session()
-        session.verify = False
+        # session.verify = False
         session.headers.update({
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Safari/537.36 Edg/112.0.1722.68"
         })
@@ -74,12 +130,16 @@ class MaxDoc:
             # re.search(re.compile("(?:senddate:)(.*)") ,str(soup.select("script")[5].next)).groups() view_token
             # print(doc_url_dict)
             for i in doc_url_dict:
-                with open(f"{path}\\{i}.png", "wb") as f:
+                resp = session.get(f"https:{doc_url_dict[i]}", headers={
+                    "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+                }, stream=True)
+                with open(f"{path}\\{i}.gif", "wb") as f:
                     print(f"{str(datetime.datetime.now())[0:-7]}\t正在下载第{i}张图片...", end="")
-                    f.write(session.get(f"https:{doc_url_dict[i]}").content)
+                    for chunk in resp.iter_content(chunk_size=8192):
+                        f.write(chunk)
                     print("下载完成")
             self.print_msg("爬取完成，存放于脚本img目录下")
-
+        self.images_to_pdf()
 
 if __name__ == "__main__":
     if len(sys.argv) == 1:
