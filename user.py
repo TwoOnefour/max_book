@@ -6,7 +6,6 @@
 import requests
 
 
-
 class User:
     def __init__(self, username, password, session):
         self.username = username
@@ -21,7 +20,7 @@ class User:
             "msg": "登录成功",
             "datas": {
                 "token": "xxx",
-                "callback": "https:\/\/max.book118.com\/index.php?g=User&m=Index&a=login&token=xxx"
+                "callback": "https://max.book118.com/index.php?g=User&m=Index&a=login&token=xxx"
             }
         }
         :param session:

@@ -12,7 +12,18 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 import yaml
 from user import User
+import sys
 
+# def show_progress(pct: float, prefix):
+#     sys.stdout.write(f"\r{prefix} {pct*100:.2f}%")
+#     sys.stdout.flush()
+
+
+def show_progress(pct: float, prefix="进度"):
+    filled = int(30 * pct)
+    bar = "█" * filled + "-" * (30 - filled)
+    sys.stdout.write(f"\r{prefix} |{bar}| {pct*100:6.2f}%")
+    sys.stdout.flush()
 
 class MaxDoc:
     def __init__(self, url):
@@ -31,7 +42,8 @@ class MaxDoc:
             user_cfg = cfg.get("user")
             username = user_cfg.get("username")
             password = user_cfg.get("password")
-            if username and password:
+            self.loginOptions = user_cfg.get("login")
+            if username and password and self.loginOptions:
                 self.user = User(username, password, self.session)
 
 
@@ -70,7 +82,9 @@ class MaxDoc:
         c = canvas.Canvas(output_pdf_path, pagesize=(width, height))
 
         # 3. 遍历所有图片并添加到PDF中
-        for image_file in image_files:
+        total_files = len(image_files)
+
+        for count, image_file in enumerate(image_files):
             image_path = os.path.join(image_folder, image_file)
             try:
                 with Image.open(image_path) as img:
@@ -81,11 +95,12 @@ class MaxDoc:
                     c.drawImage(ImageReader(img), 0, 0, width=img_width, height=img_height)
                     # 添加新的一页，为下一张图片做准备
                     c.showPage()
-                    self.print_msg(f"已处理: {image_file}")
+                show_progress(count / (total_files - 1), f"{str(datetime.datetime.now())[0:-7]}\t" + f"已处理: ")
             except Exception as e:
                 self.print_msg(f"处理文件 {image_file} 时出错: {e}")
 
         # 4. 保存PDF文件
+        print()
         c.save()
         self.print_msg(f"成功！PDF已保存至: {output_pdf_path}")
     
@@ -121,8 +136,9 @@ class MaxDoc:
 
     def read_file_info(self):
         t, view_token, project_id, aid, actual_page, preview_page = self.get_and_parse_html()
-        if actual_page != preview_page:
-            self.print_msg(f"检测到 {actual_page} 页, 实际能阅读 {preview_page} 页，之后的内容需要登陆, 请填写config.yml并登录，若已填写请忽略此消息")
+        if (not self.loginOptions) or (not self.user.loginStatus):
+            if preview_page != actual_page:
+                self.print_msg(f"检测到 {actual_page} 页, 实际能阅读 {preview_page} 页，之后的内容需要登陆, 请填写config.yml并登录")
         interval = 2
         doc_url_dict = {}
         offset = 1
@@ -156,27 +172,33 @@ class MaxDoc:
             for j in now["data"]:
                 if now["data"][j] != "" and j not in doc_url_dict:
                     doc_url_dict[j] = now["data"][j]
+                    show_progress(offset / int(preview_page), f"{str(datetime.datetime.now())[0:-7]}\t" + "目前读取图片进度为:")
                     offset += 1
-                    if offset % 5 == 0:
-                        self.print_msg(f"目前读取图片进度为: {offset / int(preview_page) * 100:.2f}%")
 
+        print()
         return doc_url_dict
 
     def download_file(self, doc_url_dict):
-        for i in doc_url_dict:
+        n = len(doc_url_dict)
+        for count, i in enumerate(doc_url_dict):
             resp = self.session.get(f"https:{doc_url_dict[i]}", headers={
                 "Accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
             }, stream=True)
-            with open(f"{self.image_path}\\{i}.gif", "wb") as f:
-                print(f"{str(datetime.datetime.now())[0:-7]}\t正在下载第{i}张图片...", end="")
+            suffix = resp.headers.get("Content-Type").split("/").pop()
+            with open(f"{self.image_path}\\{i}.{suffix}", "wb") as f:
+
                 for chunk in resp.iter_content(chunk_size=8192):
                     f.write(chunk)
-                print("下载完成")
+
+            show_progress(count / (n - 1), f"{str(datetime.datetime.now())[0:-7]}" + f"\t正在下载图片")
+        print()
 
     def login(self):
         if not self.user.login():
+            self.print_msg("登陆失败, 将进行预览下载")
             return
         if not self.user.getUserInfo():
+            self.print_msg("登陆失败，将进行预览下载")
             return
         self.user.loginStatus = True
 
