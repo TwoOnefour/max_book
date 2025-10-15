@@ -7,12 +7,20 @@ ppt只能爬取链接
 **注意，只能下载免费预览的文档，付费文档请付费下载**
 # Usage
 
-先下载依赖
+克隆本项目
 ```
-pip install lmxl beautifulsoup4 requests Pillow reportlab
+git clone https://github.com/twoonefour/max_book.git
 ```
 
+下载依赖
+
+```
+pip install -r requirements.txt
+```
+
+实际用法如下
 ```angular2html
+
 python.exe get_doc.py 'maxbook的文档url'
 ```
 
@@ -22,7 +30,7 @@ python.exe get_doc.py 'maxbook的文档url'
 python.exe get_doc.py https://max.book118.com/html/2017/0122/86192397.shtm
 ```
 
-![输出图片](img/output.png)
+![输出图片](statics/output.png)
 
 有问题欢迎发issue，有bug一定会修
 

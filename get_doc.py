@@ -9,7 +9,6 @@ import json
 from lxml import etree
 import os
 from PIL import Image
-from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 
@@ -95,7 +94,9 @@ class MaxDoc:
         project_id = 1
         aid = re.findall(re.compile("(?:aid:)(.*),"), str(soup.select("script")).strip(" "))[-1]
         actual_page = re.search(re.compile("(?:actual_page:)(.*),"), str(soup.select("script"))).groups()[0].strip(" ")
+        preview_page = re.search(re.compile("(?:preview_page:)(.*),"), str(soup.select("script"))).groups()[0].strip(" ")
         format = re.search(re.compile("(?:format:)(.*),"), str(soup.select("script"))).groups()[0].strip(" ").strip("'")
+
         if format == "ppt":
             # res = session.get("https:" + view_token)
             # etree.HTMLParser(encoding="utf-8")
@@ -104,28 +105,40 @@ class MaxDoc:
             # session.get("https://view-cache.book118.com" + json.loads(str(tree.xpath("/html/body/div[1]/input[2]")[0].attrib).replace("'", "\""))["value"])
             self.print_msg(f"格式为ppt，无法下载，请访问此链接查看\nhttps:{view_token}")
         else:
+            self.print_msg(f"检测到 {actual_page} 页, 实际能阅读 {preview_page} 页，之后的内容需要登陆")
+            interval = 2
             doc_url_dict = {}
-            for i in range(int(actual_page)):
+            offset = 1
+            while offset < int(preview_page):
                 url_list = session.get("https://openapi.book118.com/getPreview.html", params={
                     "t": t,
                     "view_token": view_token,
                     "project_id": project_id,
                     "aid": aid,
-                    "page": i + 1
+                    "page": offset
                 }).text
-                time.sleep(1)
+                time.sleep(interval)
                 if url_list[0] != "j":
                     self.print_msg(json.loads(url_list)["message"])
                     return
                 now = json.loads(url_list.strip("jsonpReturn(").strip(")")[:-2])
+
                 if now["status"] != 200:
                     # print("未知错误")
                     self.print_msg("未知错误")
                     os.rmdir(path)
                     return
+                if now['data'].get(str(offset)) == '':
+                    self.print_msg(f"速率过快，重试api...")
+                    interval += 0.5
+                    continue
+
                 for j in now["data"]:
-                    if now["data"][j] != "" and doc_url_dict.get(j) is None:
+                    if now["data"][j] != "" and j not in doc_url_dict:
                         doc_url_dict[j] = now["data"][j]
+                        offset += 1
+                        if offset % 5 == 0:
+                            self.print_msg(f"目前读取图片进度为: {offset / int(preview_page) * 100:.2f}%")
                 # print(json.loads(url_list.strip("jsonpReturn(").strip(")")[:-2])["data"])
             # re.search(re.compile("(?:senddate:)(.*)") ,str(soup.select("script")[5].next)).groups() view_token
             # print(doc_url_dict)
